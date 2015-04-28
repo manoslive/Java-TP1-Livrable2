@@ -8,6 +8,7 @@ import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
 public class Panneau extends javax.swing.JFrame {
@@ -23,6 +24,8 @@ public class Panneau extends javax.swing.JFrame {
         TB_TonMessage.setWrapStyleWord(true);
         TA_Messages.setLineWrap(true);
         TA_Messages.setWrapStyleWord(true);
+        // LA MASTER LIGNE!!!
+        TB_TonMessage.getInputMap().put(KeyStroke.getKeyStroke("ENTER"),"none");
     }
 
     @SuppressWarnings("unchecked")
