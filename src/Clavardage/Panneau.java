@@ -24,7 +24,7 @@ public class Panneau extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
 
     private void RemplirTextBox() {
-        TB_IP.setText("127.0.0.1");
+        TB_IP.setText("172.22.138.152");
         TB_Port.setText("50000");
         CB_ResteConnecte.setSelected(true);
         TB_Pseudonyme.setText("manu");
@@ -67,6 +67,7 @@ public class Panneau extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         BTN_Envoyer.setText("Envoyer");
+        BTN_Envoyer.setEnabled(false);
         BTN_Envoyer.setName("BTN_Envoyer"); // NOI18N
         BTN_Envoyer.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -95,10 +96,17 @@ public class Panneau extends javax.swing.JFrame {
 
         TA_Messages.setColumns(20);
         TA_Messages.setRows(5);
+        TA_Messages.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
+        TA_Messages.setDisabledTextColor(new java.awt.Color(0, 0, 0));
         TA_Messages.setEnabled(false);
         jScrollPane2.setViewportView(TA_Messages);
 
+        TB_Port.setDisabledTextColor(new java.awt.Color(51, 51, 51));
+        TB_Port.setScrollOffset(1);
+
+        TB_IP.setDisabledTextColor(new java.awt.Color(51, 51, 51));
         TB_IP.setName("TB_IP"); // NOI18N
+        TB_IP.setScrollOffset(1);
 
         BTN_Connection.setText("Connection");
         BTN_Connection.setName("BTN_Connection"); // NOI18N
@@ -112,7 +120,9 @@ public class Panneau extends javax.swing.JFrame {
 
         jLabel2.setText("Pseudo:");
 
+        TB_Pseudonyme.setDisabledTextColor(new java.awt.Color(51, 51, 51));
         TB_Pseudonyme.setName("TB_Pseudonyme"); // NOI18N
+        TB_Pseudonyme.setScrollOffset(1);
 
         BTN_Quitter.setText("Quitter");
         BTN_Quitter.addActionListener(new java.awt.event.ActionListener() {
@@ -199,42 +209,52 @@ public class Panneau extends javax.swing.JFrame {
         } catch (IOException ex) {
             Logger.getLogger(Panneau.class.getName()).log(Level.SEVERE, null, ex);
         }
+        TA_Messages.setText(TA_Messages.getText() + "Vous êtes déconnecté\n");
         System.out.println("Déconnecté");
         BTN_Connection.setEnabled(true);
         BTN_Deconnecter.setEnabled(false);
         TB_IP.setEnabled(true);
         TB_Pseudonyme.setEnabled(true);
         TB_Port.setEnabled(true);
+        BTN_Envoyer.setEnabled(false);
     }//GEN-LAST:event_BTN_DeconnecterActionPerformed
 
     private void BTN_ConnectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_ConnectionActionPerformed
-        if (ConnectSocket == null || !ConnectSocket.isClosed()) {
-            if (CB_ResteConnecte.isSelected()) {
-                DemarrerTimer(true);
-            }
+        if(!TB_IP.getText().equals("") || !TB_Port.getText().equals("") || !TB_Pseudonyme.getText().equals(""))
+        {
+            if (ConnectSocket == null || ConnectSocket.isClosed()) {
+               try {
+                   ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
+                   new Thread(new GestionMessages(ConnectSocket, TA_Messages)).start();
 
-            try {
-                ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
-                new Thread(new GestionMessages(ConnectSocket, TA_Messages)).start();
+                   writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
+                   writer.println(TB_Pseudonyme.getText());
+                   writer.flush();
+                   if (CB_ResteConnecte.isSelected() && ConnectSocket.isConnected()) {
+                       DemarrerTimer(true);
+                       TB_IP.setEnabled(false);
+                       TB_Pseudonyme.setEnabled(false);
+                       TB_Port.setEnabled(false);
+                       BTN_Connection.setEnabled(false);
+                       BTN_Deconnecter.setEnabled(true);
+                       CB_ResteConnecte.setEnabled(false);
+                       BTN_Envoyer.setEnabled(true);
+                   }
 
-                writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
-                writer.println(TB_Pseudonyme.getText());
-                writer.flush();
-
-            } catch (NumberFormatException nfe) {
-                System.out.println(nfe.getMessage());
-            } catch (IOException ioe) {
-                TA_Messages.setText(TA_Messages.getText() + "Connection impossible\n");
-                ConnectSocket = null;
-            }
-            TB_IP.setEnabled(false);
-            TB_Pseudonyme.setEnabled(false);
-            TB_Port.setEnabled(false);
-            BTN_Connection.setEnabled(false);
-            BTN_Deconnecter.setEnabled(true);
-        } else {
-            TA_Messages.setText(TA_Messages.getText() + "Vous êtes déjà connecté!\n");
+               } catch (NumberFormatException nfe) {
+                   System.out.println(nfe.getMessage());
+               } catch (IOException ioe) {
+                   TA_Messages.setText(TA_Messages.getText() + "Connection impossible\n");
+                   ConnectSocket = null;
+               }
+           } else {
+               TA_Messages.setText(TA_Messages.getText() + "Vous êtes déjà connecté!\n");
+           }   
         }
+        else{
+            TA_Messages.setText(TA_Messages.getText() + "S.V.P remplir les champs de connexions");
+        }
+        
     }//GEN-LAST:event_BTN_ConnectionActionPerformed
 
     private void BTN_QuitterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_QuitterActionPerformed
@@ -260,15 +280,21 @@ public class Panneau extends javax.swing.JFrame {
             writer.flush();
 
             TB_TonMessage.setText("");
+            TA_Messages.setCaretPosition(TA_Messages.getDocument().getLength());
         }
     }//GEN-LAST:event_BTN_EnvoyerActionPerformed
-
+    
     private void TB_TonMessageKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TB_TonMessageKeyPressed
-        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-            writer.println(TB_TonMessage.getText());
-            writer.flush();
-
-            TB_TonMessage.setText("");
+        if(ConnectSocket.isConnected())
+        {
+            if (TB_TonMessage.getText().length() > 1) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    writer.println(TB_TonMessage.getText());
+                    writer.flush();
+                    TB_TonMessage.setText("");
+                    TA_Messages.setCaretPosition(TA_Messages.getDocument().getLength());
+                }
+            }
         }
     }//GEN-LAST:event_TB_TonMessageKeyPressed
     /**
