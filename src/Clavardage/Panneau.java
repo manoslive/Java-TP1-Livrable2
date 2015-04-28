@@ -19,6 +19,10 @@ public class Panneau extends javax.swing.JFrame {
     public Panneau() {
         initComponents();
         RemplirTextBox();
+        TB_TonMessage.setLineWrap(true);
+        TB_TonMessage.setWrapStyleWord(true);
+        TA_Messages.setLineWrap(true);
+        TA_Messages.setWrapStyleWord(true);
     }
 
     @SuppressWarnings("unchecked")
@@ -65,6 +69,11 @@ public class Panneau extends javax.swing.JFrame {
         CB_ResteConnecte = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         BTN_Envoyer.setText("Envoyer");
         BTN_Envoyer.setEnabled(false);
@@ -220,8 +229,11 @@ public class Panneau extends javax.swing.JFrame {
     }//GEN-LAST:event_BTN_DeconnecterActionPerformed
 
     private void BTN_ConnectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_ConnectionActionPerformed
-        if(!TB_IP.getText().equals("") || !TB_Port.getText().equals("") || !TB_Pseudonyme.getText().equals(""))
+        if(TB_IP.getText().equals("") || TB_Port.getText().equals("") || TB_Pseudonyme.getText().equals(""))
         {
+            TA_Messages.setText(TA_Messages.getText() + "S.V.P remplir les champs de connexions\n");
+        }
+        else{
             if (ConnectSocket == null || ConnectSocket.isClosed()) {
                try {
                    ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
@@ -240,43 +252,46 @@ public class Panneau extends javax.swing.JFrame {
                        CB_ResteConnecte.setEnabled(false);
                        BTN_Envoyer.setEnabled(true);
                    }
-
+               } catch (SocketException sex){
+                   TA_Messages.setText(TA_Messages.getText() + "Serveur inatteignable\n");
                } catch (NumberFormatException nfe) {
                    System.out.println(nfe.getMessage());
                } catch (IOException ioe) {
                    TA_Messages.setText(TA_Messages.getText() + "Connection impossible\n");
                    ConnectSocket = null;
+               }catch(Exception ex)
+               {
+                   TA_Messages.setText(TA_Messages.getText() + "Erreur de connection\n");
                }
            } else {
                TA_Messages.setText(TA_Messages.getText() + "Vous êtes déjà connecté!\n");
            }   
-        }
-        else{
-            TA_Messages.setText(TA_Messages.getText() + "S.V.P remplir les champs de connexions");
-        }
-        
+        }        
     }//GEN-LAST:event_BTN_ConnectionActionPerformed
 
     private void BTN_QuitterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_QuitterActionPerformed
-        if (CB_ResteConnecte.isSelected()) {
-            DemarrerTimer(false);
-        }
+        
+        //if (CB_ResteConnecte.isSelected() && ConnectSocket.isConnected()) {
+            //DemarrerTimer(false); 
+        //} 
         try {
-            ConnectSocket.close();
-            writer.close();
+            if(ConnectSocket != null){
+                ConnectSocket.close();
+                writer.close();
+            }
         } catch (IOException e) {
         }
         System.exit(0);
     }//GEN-LAST:event_BTN_QuitterActionPerformed
 
     private void BTN_EnvoyerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_EnvoyerActionPerformed
-        if (TB_TonMessage.getText().length() < 1) {
+        if (TB_TonMessage.getText().trim().equals("")) {
             // On envoit rien car le jtextfield est vide
         } else if (TB_TonMessage.getText().equals(".clear")) {
             TA_Messages.setText("Cleared all messages\n");
             TA_Messages.setText("");
         } else {
-            writer.println(TB_TonMessage.getText());
+            writer.println(TB_TonMessage.getText().trim());
             writer.flush();
 
             TB_TonMessage.setText("");
@@ -289,7 +304,7 @@ public class Panneau extends javax.swing.JFrame {
         {
             if (TB_TonMessage.getText().length() > 1) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    writer.println(TB_TonMessage.getText());
+                    writer.println(TB_TonMessage.getText().trim());
                     writer.flush();
                     TB_TonMessage.setText("");
                     TA_Messages.setCaretPosition(TA_Messages.getDocument().getLength());
@@ -297,6 +312,17 @@ public class Panneau extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_TB_TonMessageKeyPressed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+
+        try {
+            if(ConnectSocket != null){
+                ConnectSocket.close();
+                writer.close();
+            }
+        } catch (IOException e) {
+        }
+    }//GEN-LAST:event_formWindowClosing
     /**
      * @param args the command line arguments
      */
