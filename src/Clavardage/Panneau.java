@@ -242,7 +242,7 @@ public class Panneau extends javax.swing.JFrame {
                    writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
                    writer.println(TB_Pseudonyme.getText());
                    writer.flush();
-                   if (CB_ResteConnecte.isSelected() && ConnectSocket.isConnected()) {
+                   if (CB_ResteConnecte.isSelected() && ConnectSocket != null) {
                        DemarrerTimer(true);
                        TB_IP.setEnabled(false);
                        TB_Pseudonyme.setEnabled(false);
@@ -300,7 +300,7 @@ public class Panneau extends javax.swing.JFrame {
     }//GEN-LAST:event_BTN_EnvoyerActionPerformed
     
     private void TB_TonMessageKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TB_TonMessageKeyPressed
-        if(ConnectSocket.isConnected())
+        if(ConnectSocket != null)
         {
             if (TB_TonMessage.getText().length() > 1) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
