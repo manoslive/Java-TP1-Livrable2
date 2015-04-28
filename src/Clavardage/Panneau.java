@@ -1,15 +1,20 @@
 package Clavardage;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JTextArea;
+import javax.swing.Timer;
 
 public class Panneau extends javax.swing.JFrame {
 
     public PrintWriter writer;
     public Socket ConnectSocket;
+    Timer resterConnecterTimer = null;
 
     public Panneau() {
         initComponents();
@@ -23,6 +28,22 @@ public class Panneau extends javax.swing.JFrame {
         TB_Port.setText("50000");
         CB_ResteConnecte.setSelected(true);
         TB_Pseudonyme.setText("manu");
+    }
+
+    private void DemarrerTimer(boolean isTimerOn) {
+        if (isTimerOn) {
+            resterConnecterTimer = new Timer(4000, (ActionEvent e) -> {
+                if (CB_ResteConnecte.isSelected() && ConnectSocket != null && !ConnectSocket.isClosed()) {
+                    writer.println("   ");
+                    writer.flush();
+                }
+            });
+
+            resterConnecterTimer.start();
+        } else {
+            resterConnecterTimer.stop();
+        }
+
     }
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -169,8 +190,12 @@ public class Panneau extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
     private void BTN_DeconnecterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_DeconnecterActionPerformed
+        if (CB_ResteConnecte.isSelected()) {
+            DemarrerTimer(false);
+        }
         try {
             ConnectSocket.close();
+            
         } catch (IOException ex) {
             Logger.getLogger(Panneau.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -183,34 +208,42 @@ public class Panneau extends javax.swing.JFrame {
     }//GEN-LAST:event_BTN_DeconnecterActionPerformed
 
     private void BTN_ConnectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_ConnectionActionPerformed
-        if (CB_ResteConnecte.isSelected()) {
-            ResterConnecte resterCon = new ResterConnecte(writer);
-            Thread resterConnecter;
-            resterConnecter = new Thread(resterCon);
-            resterConnecter.setDaemon(true);
-            resterConnecter.start();
-        }
-        try {
-            ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
-            new Thread(new GestionMessages(ConnectSocket, TA_Messages)).start();
+        if (ConnectSocket == null || !ConnectSocket.isClosed()) {
+            if (CB_ResteConnecte.isSelected()) {
+                DemarrerTimer(true);
+            }
 
-            writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
-            writer.println(TB_Pseudonyme.getText());
-            writer.flush();
-            //new Thread(new OutputHandler(master,textField)).start();
-        } catch (NumberFormatException | IOException ex) {
-            System.out.println(ex.getMessage());
+            try {
+                ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
+                new Thread(new GestionMessages(ConnectSocket, TA_Messages)).start();
+
+                writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
+                writer.println(TB_Pseudonyme.getText());
+                writer.flush();
+
+            } catch (NumberFormatException nfe) {
+                System.out.println(nfe.getMessage());
+            } catch (IOException ioe) {
+                TA_Messages.setText(TA_Messages.getText() + "Connection impossible\n");
+                ConnectSocket = null;
+            }
+            TB_IP.setEnabled(false);
+            TB_Pseudonyme.setEnabled(false);
+            TB_Port.setEnabled(false);
+            BTN_Connection.setEnabled(false);
+            BTN_Deconnecter.setEnabled(true);
+        } else {
+            TA_Messages.setText(TA_Messages.getText() + "Vous êtes déjà connecté!\n");
         }
-        TB_IP.setEnabled(false);
-        TB_Pseudonyme.setEnabled(false);
-        TB_Port.setEnabled(false);
-        BTN_Connection.setEnabled(false);
-        BTN_Deconnecter.setEnabled(true);
     }//GEN-LAST:event_BTN_ConnectionActionPerformed
 
     private void BTN_QuitterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_QuitterActionPerformed
+        if (CB_ResteConnecte.isSelected()) {
+            DemarrerTimer(false);
+        }
         try {
             ConnectSocket.close();
+            writer.close();
         } catch (IOException e) {
         }
         System.exit(0);
@@ -231,11 +264,11 @@ public class Panneau extends javax.swing.JFrame {
     }//GEN-LAST:event_BTN_EnvoyerActionPerformed
 
     private void TB_TonMessageKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TB_TonMessageKeyPressed
-        if (evt.getKeyCode()==KeyEvent.VK_ENTER){
-        writer.println(TB_TonMessage.getText());
-        writer.flush();
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            writer.println(TB_TonMessage.getText());
+            writer.flush();
 
-        TB_TonMessage.setText("");
+            TB_TonMessage.setText("");
         }
     }//GEN-LAST:event_TB_TonMessageKeyPressed
     /**
