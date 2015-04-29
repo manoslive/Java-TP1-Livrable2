@@ -6,10 +6,11 @@ import java.net.Socket;
 import javax.swing.JTextArea;
 
 public class GestionMessages implements Runnable {
-
+        // Attributs de la classe
         private Socket socket;
         JTextArea Input = new JTextArea();
         
+        // Constructeur paramétrique
         public GestionMessages(Socket socket, JTextArea textField) {
             this.socket = socket;
             Input = textField;
@@ -22,9 +23,8 @@ public class GestionMessages implements Runnable {
                 reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 while (commune) {
                     String text = reader.readLine();
-                    //System.out.println("\n<server> " + text);
                     Input.append(text + "\n");
-                    
+                    // Pour quitter la boucle on écrit "bye" à la console
                     if (text.toLowerCase().equals("bye"))
                         commune = false;
                 }

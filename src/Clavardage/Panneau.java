@@ -13,6 +13,9 @@ import javax.swing.Timer;
 
 public class Panneau extends javax.swing.JFrame {
 
+    // Attributs de la classe
+
+    final int delais = 4000;
     public PrintWriter writer;
     public Socket ConnectSocket;
     Timer resterConnecterTimer = null;
@@ -25,21 +28,28 @@ public class Panneau extends javax.swing.JFrame {
         TA_Messages.setLineWrap(true);
         TA_Messages.setWrapStyleWord(true);
         // LA MASTER LIGNE!!!
-        TB_TonMessage.getInputMap().put(KeyStroke.getKeyStroke("ENTER"),"none");
+        TB_TonMessage.getInputMap().put(KeyStroke.getKeyStroke("ENTER"), "none");
     }
 
     @SuppressWarnings("unchecked")
-
+    // Servait à remplir les textbox pour sauver du temps
     private void RemplirTextBox() {
-        TB_IP.setText("172.22.138.152");
-        TB_Port.setText("50000");
-        CB_ResteConnecte.setSelected(true);
-        TB_Pseudonyme.setText("manu");
+        /*
+         TB_IP.setText("172.22.138.152");
+         TB_Port.setText("50000");
+         CB_ResteConnecte.setSelected(true);
+         TB_Pseudonyme.setText("manu");
+         */
+
     }
+
+    // Le timer sert a envoyé des lignes à toutes les 4000 ms
+    // Recoit une bool en paramètre is - on stop le timer
+    // si + on démarre le timer
 
     private void DemarrerTimer(boolean isTimerOn) {
         if (isTimerOn) {
-            resterConnecterTimer = new Timer(4000, (ActionEvent e) -> {
+            resterConnecterTimer = new Timer(delais, (ActionEvent e) -> {
                 if (CB_ResteConnecte.isSelected() && ConnectSocket != null && !ConnectSocket.isClosed()) {
                     writer.println("   ");
                     writer.flush();
@@ -52,6 +62,9 @@ public class Panneau extends javax.swing.JFrame {
         }
 
     }
+
+    // Déconnection : ferme la connection et réinitialise l'état des boutons
+    // et affiche l'état de la connection
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -217,7 +230,7 @@ public class Panneau extends javax.swing.JFrame {
         }
         try {
             ConnectSocket.close();
-            
+
         } catch (IOException ex) {
             Logger.getLogger(Panneau.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -231,54 +244,52 @@ public class Panneau extends javax.swing.JFrame {
         BTN_Envoyer.setEnabled(false);
     }//GEN-LAST:event_BTN_DeconnecterActionPerformed
 
+    // Connection : Ouvre une connection avec l'ip et le port recu des textbox. Assigne le nom d'utilisateur selon le textbox
     private void BTN_ConnectionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_ConnectionActionPerformed
-        if(TB_IP.getText().equals("") || TB_Port.getText().equals("") || TB_Pseudonyme.getText().equals(""))
-        {
+        if (TB_IP.getText().equals("") || TB_Port.getText().equals("") || TB_Pseudonyme.getText().equals("")) {
             TA_Messages.setText(TA_Messages.getText() + "S.V.P remplir les champs de connexions\n");
-        }
-        else{
+        } else {
             if (ConnectSocket == null || ConnectSocket.isClosed()) {
-               try {
-                   ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
-                   new Thread(new GestionMessages(ConnectSocket, TA_Messages)).start();
+                try {
+                    ConnectSocket = new Socket(TB_IP.getText(), Integer.parseInt(TB_Port.getText()));
+                    new Thread(new GestionMessages(ConnectSocket, TA_Messages)).start();
 
-                   writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
-                   writer.println(TB_Pseudonyme.getText());
-                   writer.flush();
-                   if (CB_ResteConnecte.isSelected() && ConnectSocket != null) {
-                       DemarrerTimer(true);
-                       TB_IP.setEnabled(false);
-                       TB_Pseudonyme.setEnabled(false);
-                       TB_Port.setEnabled(false);
-                       BTN_Connection.setEnabled(false);
-                       BTN_Deconnecter.setEnabled(true);
-                       CB_ResteConnecte.setEnabled(false);
-                       BTN_Envoyer.setEnabled(true);
-                   }
-               } catch (SocketException sex){
-                   TA_Messages.setText(TA_Messages.getText() + "Serveur inatteignable\n");
-               } catch (NumberFormatException nfe) {
-                   System.out.println(nfe.getMessage());
-               } catch (IOException ioe) {
-                   TA_Messages.setText(TA_Messages.getText() + "Connection impossible\n");
-                   ConnectSocket = null;
-               }catch(Exception ex)
-               {
-                   TA_Messages.setText(TA_Messages.getText() + "Erreur de connection\n");
-               }
-           } else {
-               TA_Messages.setText(TA_Messages.getText() + "Vous êtes déjà connecté!\n");
-           }   
-        }        
+                    writer = new PrintWriter(new OutputStreamWriter(ConnectSocket.getOutputStream()));
+                    writer.println(TB_Pseudonyme.getText());
+                    writer.flush();
+                    if (CB_ResteConnecte.isSelected() && ConnectSocket != null) {
+                        DemarrerTimer(true);
+                        TB_IP.setEnabled(false);
+                        TB_Pseudonyme.setEnabled(false);
+                        TB_Port.setEnabled(false);
+                        BTN_Connection.setEnabled(false);
+                        BTN_Deconnecter.setEnabled(true);
+                        CB_ResteConnecte.setEnabled(false);
+                        BTN_Envoyer.setEnabled(true);
+                    }
+                } catch (SocketException sex) {
+                    TA_Messages.setText(TA_Messages.getText() + "Serveur inatteignable\n");
+                } catch (NumberFormatException nfe) {
+                    System.out.println(nfe.getMessage());
+                } catch (IOException ioe) {
+                    TA_Messages.setText(TA_Messages.getText() + "Connection impossible\n");
+                    ConnectSocket = null;
+                } catch (Exception ex) {
+                    TA_Messages.setText(TA_Messages.getText() + "Erreur de connection\n");
+                }
+            } else {
+                TA_Messages.setText(TA_Messages.getText() + "Vous êtes déjà connecté!\n");
+            }
+        }
     }//GEN-LAST:event_BTN_ConnectionActionPerformed
-
+    // Quitter : Ferme le socket et le printwriter
     private void BTN_QuitterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_QuitterActionPerformed
-        
+
         //if (CB_ResteConnecte.isSelected() && ConnectSocket.isConnected()) {
-            //DemarrerTimer(false); 
+        //DemarrerTimer(false); 
         //} 
         try {
-            if(ConnectSocket != null){
+            if (ConnectSocket != null) {
                 ConnectSocket.close();
                 writer.close();
             }
@@ -286,25 +297,24 @@ public class Panneau extends javax.swing.JFrame {
         }
         System.exit(0);
     }//GEN-LAST:event_BTN_QuitterActionPerformed
-
+    // Envoyer : Textbox vide = pas d'envoie
     private void BTN_EnvoyerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BTN_EnvoyerActionPerformed
-        if (TB_TonMessage.getText().trim().equals("")) {
-            // On envoit rien car le jtextfield est vide
-        } else if (TB_TonMessage.getText().equals(".clear")) {
-            TA_Messages.setText("Cleared all messages\n");
+        if (TB_TonMessage.getText().trim().equals("")) // On envoit rien car le jtextfield est vide
+        {
             TA_Messages.setText("");
         } else {
+            // On enlève les espaces non nécessaire
             writer.println(TB_TonMessage.getText().trim());
             writer.flush();
 
             TB_TonMessage.setText("");
+            // Empêche de dépasser le cadre du Textarea
             TA_Messages.setCaretPosition(TA_Messages.getDocument().getLength());
         }
     }//GEN-LAST:event_BTN_EnvoyerActionPerformed
-    
+    // Surcharge l'action de la touche ENTER pour envoyer le texte au serveur 
     private void TB_TonMessageKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TB_TonMessageKeyPressed
-        if(ConnectSocket != null)
-        {
+        if (ConnectSocket != null) {
             if (TB_TonMessage.getText().length() > 1) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
                     writer.println(TB_TonMessage.getText().trim());
@@ -315,11 +325,10 @@ public class Panneau extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_TB_TonMessageKeyPressed
-
+    // Lorsque la form se ferme on ferme le socket et le printwriter
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-
         try {
-            if(ConnectSocket != null){
+            if (ConnectSocket != null) {
                 ConnectSocket.close();
                 writer.close();
             }
